@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import HomeScreen from './components/HomeScreen';
 import MatchingScreen from './components/MatchingScreen';
 import ProfileScreen from './components/ProfileScreen';
+import logoImage from './assets/logo.jpg'; // 로고 이미지 import
 
 function App() {
   const [activeScreen, setActiveScreen] = useState('home');
@@ -28,15 +29,12 @@ function App() {
   ]);
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 p-4">
+    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 p-4 pb-20">
       <div className="w-full max-w-md mb-6">
         <div className="flex items-center space-x-4">
-          {/* 배드민턴 라켓 로고 */}
-          <div className="relative h-40 w-16">
-            <div className="bg-blue-500 h-32 w-6 rounded-b-lg absolute left-5"></div>
-            <div className="bg-blue-600 h-16 w-16 rounded-full absolute top-0"></div>
-            <div className="bg-blue-400 h-12 w-12 rounded-full absolute top-2 left-2"></div>
-            <div className="absolute top-14 left-6 w-4 h-20 bg-gray-200 rounded-b-lg"></div>
+          {/* 배드민턴 라켓 로고를 이미지로 대체 */}
+          <div className="h-16">
+            <img src={logoImage} alt="배드민턴 로고" className="h-full object-contain" />
           </div>
           <div>
             <h1 className="text-4xl font-bold text-blue-600">배드민턴</h1>
@@ -71,25 +69,44 @@ function App() {
         />
       )}
       
-      <div className="mt-8 flex items-center space-x-8">
-        {/* 셔틀콕 아이콘 */}
-        <div className="relative h-12 w-12">
-          <div className="absolute bottom-0 w-6 h-6 bg-white rounded-full left-3"></div>
-          <div className="absolute bottom-4 w-12 h-8 bg-white border-t border-gray-300 rounded-t-full"></div>
-        </div>
-        
-        {/* 배드민턴 라켓 */}
-        <div className="relative h-36 w-16">
-          <div className="bg-blue-500 h-28 w-4 rounded-b-lg absolute left-6"></div>
-          <div className="bg-blue-600 h-16 w-16 rounded-full absolute top-0"></div>
-          <div className="bg-blue-400 h-12 w-12 rounded-full absolute top-2 left-2"></div>
-          <div className="absolute top-14 left-7 w-2 h-20 bg-gray-200 rounded-b-lg"></div>
-        </div>
-        
-        {/* 셔틀콕 아이콘 */}
-        <div className="relative h-12 w-12">
-          <div className="absolute bottom-0 w-6 h-6 bg-white rounded-full left-3"></div>
-          <div className="absolute bottom-4 w-12 h-8 bg-white border-t border-gray-300 rounded-t-full"></div>
+      {/* 하단 네비게이션 바 */}
+      <div className="fixed bottom-0 left-0 right-0 bg-white shadow-lg border-t border-gray-200">
+        <div className="flex justify-around max-w-md mx-auto">
+          <button 
+            className={`flex flex-col items-center py-3 px-6 ${activeScreen === 'home' ? 'text-blue-600' : 'text-gray-500'}`}
+            onClick={() => setActiveScreen('home')}
+          >
+            <div className="relative h-6 w-6 mb-1">
+              {/* 홈 아이콘 - 집 모양 */}
+              <div className="absolute inset-x-0 bottom-0 h-3 bg-current rounded-sm"></div>
+              <div className="absolute inset-0 border-t-4 border-current" style={{ borderRadius: '50% 50% 0 0' }}></div>
+            </div>
+            <span className="text-xs font-medium">홈</span>
+          </button>
+          
+          <button 
+            className={`flex flex-col items-center py-3 px-6 ${activeScreen === 'matching' ? 'text-blue-600' : 'text-gray-500'}`}
+            onClick={() => setActiveScreen('matching')}
+          >
+            <div className="relative h-6 w-6 mb-1">
+              {/* 매칭 아이콘 - 셔틀콕 모양 */}
+              <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-3 h-3 bg-current rounded-full"></div>
+              <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 w-4 h-3 border-l border-r border-t border-current rounded-t-full"></div>
+            </div>
+            <span className="text-xs font-medium">매칭하기</span>
+          </button>
+          
+          <button 
+            className={`flex flex-col items-center py-3 px-6 ${activeScreen === 'profile' ? 'text-blue-600' : 'text-gray-500'}`}
+            onClick={() => setActiveScreen('profile')}
+          >
+            <div className="relative h-6 w-6 mb-1">
+              {/* 마이페이지 아이콘 - 사람 모양 */}
+              <div className="absolute top-0 left-1/2 transform -translate-x-1/2 w-3 h-3 bg-current rounded-full"></div>
+              <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-5 h-3 bg-current rounded-t-full"></div>
+            </div>
+            <span className="text-xs font-medium">마이페이지</span>
+          </button>
         </div>
       </div>
     </div>

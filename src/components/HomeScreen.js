@@ -1,4 +1,6 @@
 import React from 'react';
+import shuttlecockIcon from './assets//shuttlecock-icon.jpg'; // 셔틀콕 아이콘 import
+import badmintonCourtIcon from './assets/badminton-court.jpg'; // 배드민턴 코트 아이콘 import
 
 const HomeScreen = ({ waitingList, onStartMatching }) => {
   // 대기 목록을 4개씩 그룹화
@@ -8,37 +10,12 @@ const HomeScreen = ({ waitingList, onStartMatching }) => {
   }
 
   return (
-    <div className="bg-white rounded-lg p-6 text-gray-800 w-full max-w-md shadow-lg">
+    <div className="bg-white rounded-lg p-6 text-gray-800 w-full max-w-md shadow-lg mb-4">
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center">
-          {/* 새로운 배드민턴 코트와 셔틀콕 이미지1 */}
-          <div className="relative h-24 w-24">
-            {/* 배드민턴 코트 */}
-            <div className="absolute inset-0 bg-green-100 border-2 border-green-500 rounded-sm"></div>
-            <div className="absolute inset-x-0 top-1/2 border-t-2 border-white transform -translate-y-1/2"></div>
-            <div className="absolute inset-y-0 left-1/2 border-l-2 border-white transform -translate-x-1/2"></div>
-            
-            {/* 배드민턴 라켓 왼쪽 */}
-            <div className="absolute left-2 top-6 transform -rotate-45">
-              <div className="bg-blue-600 h-10 w-10 rounded-full flex items-center justify-center">
-                <div className="bg-blue-200 h-8 w-8 rounded-full"></div>
-              </div>
-              <div className="absolute top-8 left-1/2 h-12 w-2 bg-blue-700 rounded-b-lg transform -translate-x-1/2"></div>
-            </div>
-            
-            {/* 배드민턴 라켓 오른쪽 */}
-            <div className="absolute right-2 top-6 transform rotate-45">
-              <div className="bg-red-600 h-10 w-10 rounded-full flex items-center justify-center">
-                <div className="bg-red-200 h-8 w-8 rounded-full"></div>
-              </div>
-              <div className="absolute top-8 left-1/2 h-12 w-2 bg-red-700 rounded-b-lg transform -translate-x-1/2"></div>
-            </div>
-            
-            {/* 셔틀콕 */}
-            <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
-              <div className="bg-white h-5 w-5 rounded-full"></div>
-              <div className="absolute top-4 left-1/2 transform -translate-x-1/2 border-l-4 border-r-4 border-b-4 border-white h-3 w-4 rounded-b-lg"></div>
-            </div>
+          {/* 배드민턴 코트와 셔틀콕 이미지 */}
+          <div className="h-24 w-24">
+            <img src={badmintonCourtIcon} alt="배드민턴 코트" className="w-full h-full object-contain" />
           </div>
         </div>
         <div>
@@ -126,11 +103,7 @@ const HomeScreen = ({ waitingList, onStartMatching }) => {
         className="w-full bg-blue-500 hover:bg-blue-600 text-white py-3 rounded-lg font-medium flex items-center justify-center shadow-md transition-colors duration-300"
         onClick={onStartMatching}
       >
-        <div className="mr-2 relative">
-          <div className="bg-white h-5 w-5 rounded-full"></div>
-          <div className="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-white"></div>
-          <div className="absolute -top-1 -left-1 h-2 w-2 rounded-full bg-white"></div>
-        </div>
+        <img src={shuttlecockIcon} alt="셔틀콕" className="h-6 w-6 mr-2" />
         매칭 시작하기
       </button>
     </div>
