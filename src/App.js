@@ -1,11 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import HomeScreen from './components/HomeScreen';
 import MatchingScreen from './components/MatchingScreen';
 import ProfileScreen from './components/ProfileScreen';
-import logoImage from './assets/logo.jpg'; // 로고 이미지 import
+import LoginScreen from './components/LoginScreen';
+import { getWaitingList } from './services/Axios';
+import badmintonCourtIcon from './assets/logo4.png';
 
 function App() {
   const [activeScreen, setActiveScreen] = useState('home');
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [players] = useState([
     { id: 1, name: '홍길동', level: '중급자', img: '/profile-placeholder.png' },
     { id: 2, name: '김철수', level: '고급자', img: '/profile-placeholder.png' },
@@ -15,34 +18,83 @@ function App() {
     { id: 6, name: '최지은', level: '초보자', img: '/profile-placeholder.png' }
   ]);
   
-  // 대기자 목록 확장
-  const [waitingList] = useState([
-    { id: 1, name: '대기자 1', time: '5분' },
-    { id: 2, name: '대기자 2', time: '7분' },
-    { id: 3, name: '대기자 3', time: '10분' },
-    { id: 4, name: '대기자 4', time: '12분' },
-    { id: 5, name: '대기자 5', time: '15분' },
-    { id: 6, name: '대기자 6', time: '18분' },
-    { id: 7, name: '대기자 7', time: '20분' },
-    { id: 8, name: '대기자 8', time: '22분' },
-    { id: 9, name: '대기자 9', time: '25분' }
-  ]);
+  // const [waitingList] = useState([
+  //   { id: 1, name: '대기자 1', time: '5분' },
+  //   { id: 2, name: '대기자 2', time: '7분' },
+  //   { id: 3, name: '대기자 3', time: '10분' },
+  //   { id: 4, name: '대기자 4', time: '12분' },
+  //   { id: 5, name: '대기자 5', time: '15분' },
+  //   { id: 6, name: '대기자 6', time: '18분' },
+  //   { id: 7, name: '대기자 7', time: '20분' },
+  //   { id: 8, name: '대기자 8', time: '22분' },
+  //   { id: 8, name: '대기자 8', time: '22분' },
+  //   { id: 9, name: '대기자 9', time: '25분' }
+  // ]);
+
+  // API로 가져올 대기자 목록 상태
+  const [waitingList, setWaitingList] = useState({
+    id: 0,
+    name: 'MINTON 소모임',
+    enterMebmerList: [],
+    groupList: [],
+    isManager: false
+  });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  // 로그인 상태 확인
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    setIsLoggedIn(!!token);
+  }, []);
+
+  // 컴포넌트가 마운트될 때 API 호출
+  useEffect(() => {
+    if (!isLoggedIn) return;
+
+    const fetchWaitingList = async () => {
+      try {
+        setLoading(true);
+        const response = await getWaitingList(2);
+        setWaitingList(response);
+        setError(null);
+      } catch (err) {
+        console.error('대기자 목록 가져오기 실패:', err);
+        setError('대기자 목록을 불러오는데 문제가 발생했습니다.');
+        setWaitingList({
+          id: 0,
+          name: 'MINTON 소모임',
+          enterMebmerList: [],
+          groupList: [],
+          isManager: false
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchWaitingList();
+  }, [isLoggedIn]);
+
+  const handleLoginSuccess = () => {
+    setIsLoggedIn(true);
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    setIsLoggedIn(false);
+  };
+
+  if (!isLoggedIn) {
+    return <LoginScreen onLoginSuccess={handleLoginSuccess} />;
+  }
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 p-4 pb-20">
-      <div className="w-full max-w-md mb-6">
-        <div className="flex items-center space-x-4">
-          {/* 배드민턴 라켓 로고를 이미지로 대체 */}
-          <div className="h-16">
-            <img src={logoImage} alt="배드민턴 로고" className="h-full object-contain" />
-          </div>
-          <div>
-            <h1 className="text-4xl font-bold text-blue-600">배드민턴</h1>
-            <div className="flex mt-2">
-              {[...Array(5)].map((_, i) => (
-                <div key={i} className="w-2 h-2 rounded-full bg-blue-400 mr-1"></div>
-              ))}
-            </div>
+    <div className="flex flex-col items-center justify-center min-h-screen bg-white text-gray-900 p-4 pb-20">
+      <div className="w-full max-w-md mb-0">
+        <div className="flex items-center justify-start">
+          <div className="-m-2">
+            <img src={badmintonCourtIcon} alt="NEXTCOCK" className="h-36 w-36 object-contain" />
           </div>
         </div>
       </div>
@@ -51,6 +103,7 @@ function App() {
         <HomeScreen 
           waitingList={waitingList} 
           onStartMatching={() => setActiveScreen('matching')} 
+          isManager={waitingList?.isManager}
         />
       )}
       
@@ -66,6 +119,7 @@ function App() {
         <ProfileScreen 
           onReturnClick={() => setActiveScreen('home')}
           onProfileClick={() => setActiveScreen('matching')}
+          onLogout={handleLogout}
         />
       )}
       
@@ -77,7 +131,6 @@ function App() {
             onClick={() => setActiveScreen('home')}
           >
             <div className="relative h-6 w-6 mb-1">
-              {/* 홈 아이콘 - 집 모양 */}
               <div className="absolute inset-x-0 bottom-0 h-3 bg-current rounded-sm"></div>
               <div className="absolute inset-0 border-t-4 border-current" style={{ borderRadius: '50% 50% 0 0' }}></div>
             </div>
@@ -89,7 +142,6 @@ function App() {
             onClick={() => setActiveScreen('matching')}
           >
             <div className="relative h-6 w-6 mb-1">
-              {/* 매칭 아이콘 - 셔틀콕 모양 */}
               <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-3 h-3 bg-current rounded-full"></div>
               <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 w-4 h-3 border-l border-r border-t border-current rounded-t-full"></div>
             </div>
@@ -101,7 +153,6 @@ function App() {
             onClick={() => setActiveScreen('profile')}
           >
             <div className="relative h-6 w-6 mb-1">
-              {/* 마이페이지 아이콘 - 사람 모양 */}
               <div className="absolute top-0 left-1/2 transform -translate-x-1/2 w-3 h-3 bg-current rounded-full"></div>
               <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-5 h-3 bg-current rounded-t-full"></div>
             </div>
