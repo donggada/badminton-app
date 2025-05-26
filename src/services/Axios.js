@@ -66,5 +66,41 @@ export const getWaitingList = (id) =>
     isManager: response.data.isManager || false
   }));
 
+export const register = async (userData) => {
+  try {
+    const response = await api.post('/member', userData);
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+};
+
+export const getMatchingRoomList = () => 
+  api.get('/matching-room').then(response => response.data);
+
+export const getMatchingRoom = async (roomId) => {
+  try {
+    const response = await api.get(`/matching-room/${roomId}`);
+    return response.data;
+  } catch (error) {
+    console.error('매칭방 정보 가져오기 실패:', error);
+    throw error;
+  }
+};
+
+export const createMatchingRoom = async (roomName) => {
+  try {
+    console.log('Sending request with roomName:', roomName); // 디버깅용 로그
+    const response = await api.post('/matching-room', {
+      roomName: roomName
+    });
+    console.log('Create room response:', response.data); // 디버깅용 로그
+    return response.data;
+  } catch (error) {
+    console.error('Error creating matching room:', error);
+    throw error;
+  }
+};
+
 export default api;
 
