@@ -102,5 +102,52 @@ export const createMatchingRoom = async (roomName) => {
   }
 };
 
+export const deleteMember = async (password) => {
+  try {
+    const response = await api.delete('/member', {
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      data: { password }
+    });
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+};
+
+export const getMemberProfile = async () => {
+  try {
+    const response = await api.get('/member', {
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+};
+
+export const updateMemberProfile = async (profileData) => {
+  try {
+    console.log('Updating member profile with data:', profileData); // 요청 데이터 로깅
+    const response = await api.put('/member', profileData, {
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+    console.log('Profile update response:', response.data); // 응답 데이터 로깅
+    return response.data;
+  } catch (error) {
+    console.error('Profile update error:', {
+      status: error.response?.status,
+      data: error.response?.data,
+      message: error.message
+    });
+    throw error;
+  }
+};
+
 export default api;
 

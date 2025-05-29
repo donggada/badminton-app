@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { register } from '../services/Axios';
+import { ChevronDownIcon, CheckIcon } from '@heroicons/react/24/outline';
 import badmintonCourtIcon from '../assets/logo4.png';
 
 const RegisterScreen = ({ onRegisterSuccess, onBackToLogin }) => {
@@ -12,6 +13,34 @@ const RegisterScreen = ({ onRegisterSuccess, onBackToLogin }) => {
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [isLevelDropdownOpen, setIsLevelDropdownOpen] = useState(false);
+  const dropdownRef = useRef(null);
+
+  const levelOptions = [
+    { value: 'MASTER', label: '준자강' },
+    { value: 'GROUP_A', label: 'A조' },
+    { value: 'GROUP_B', label: 'B조' },
+    { value: 'GROUP_C', label: 'C조' },
+    { value: 'GROUP_D', label: 'D조' },
+    { value: 'BEGINNER', label: '초심' },
+  ];
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsLevelDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
+  const getLevelLabel = (level) => {
+    return levelOptions.find(option => option.value === level)?.label || '초심';
+  };
 
   const validatePhoneNumber = (phoneNumber) => {
     const phoneRegex = /^(\+82-?)?(010|011|016|017|018|019)-?\d{3,4}-?\d{4}$/;
@@ -140,21 +169,40 @@ const RegisterScreen = ({ onRegisterSuccess, onBackToLogin }) => {
               <label htmlFor="level" className="block text-sm font-medium text-gray-700 mb-1">
                 급수
               </label>
-              <select
-                id="level"
-                name="level"
-                value={formData.level}
-                onChange={handleChange}
-                required
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              >
-                <option value="MASTER">준자강</option>
-                <option value="GROUP_A">A조</option>
-                <option value="GROUP_B">B조</option>
-                <option value="GROUP_C">C조</option>
-                <option value="GROUP_D">D조</option>
-                <option value="BEGINNER">초심</option>
-              </select>
+              <div className="relative" ref={dropdownRef}>
+                <button
+                  type="button"
+                  onClick={() => setIsLevelDropdownOpen(!isLevelDropdownOpen)}
+                  className="w-full flex items-center justify-between px-4 py-2 border border-gray-300 rounded-lg bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <span className="block truncate">
+                    {getLevelLabel(formData.level)}
+                  </span>
+                  <ChevronDownIcon className={`h-5 w-5 text-gray-400 transition-transform duration-200 ${isLevelDropdownOpen ? 'transform rotate-180' : ''}`} />
+                </button>
+                
+                {isLevelDropdownOpen && (
+                  <div className="absolute z-10 w-full mt-1 bg-white rounded-lg shadow-lg border border-gray-200 max-h-60 overflow-auto">
+                    {levelOptions.map((option) => (
+                      <div
+                        key={option.value}
+                        onClick={() => {
+                          setFormData(prev => ({ ...prev, level: option.value }));
+                          setIsLevelDropdownOpen(false);
+                        }}
+                        className={`flex items-center justify-between px-4 py-2 cursor-pointer hover:bg-blue-50 ${
+                          formData.level === option.value ? 'bg-blue-50' : ''
+                        }`}
+                      >
+                        <span className="block truncate">{option.label}</span>
+                        {formData.level === option.value && (
+                          <CheckIcon className="h-5 w-5 text-blue-600" />
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
 
             {error && (
