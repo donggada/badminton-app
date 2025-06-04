@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import MatchingRoomListScreen from './components/MatchingRoomListScreen';
 import MatchingRoomScreen from './components/MatchingRoomScreen';
 import ProfileScreen from './components/ProfileScreen';
@@ -7,15 +7,17 @@ import RegisterScreen from './components/RegisterScreen';
 import ConfirmModal from './components/ConfirmModal';
 import SplashScreen from './components/SplashScreen';
 import badmintonCourtIcon from './assets/logo4.png';
-import { getMatchingRoom } from './services/Axios';
+import { getMatchingRoom, joinMatchingRoomByEntryCode, joinMatchingRoom } from './services/Axios';
+import { QrCodeIcon, XMarkIcon } from '@heroicons/react/24/outline';
 
 function App() {
   const [activeScreen, setActiveScreen] = useState('splash');
   const [selectedRoomId, setSelectedRoomId] = useState(null);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [showRegister, setShowRegister] = useState(false);
-  const [showExitConfirm, setShowExitConfirm] = useState(false);
   const [showJoinConfirm, setShowJoinConfirm] = useState(false);
+  const [showEntryCodeModal, setShowEntryCodeModal] = useState(false);
+  const [entryCode, setEntryCode] = useState('');
   const [tempRoomId, setTempRoomId] = useState(null);
   const [matchingRoomData, setMatchingRoomData] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -28,6 +30,36 @@ function App() {
       setIsLoggedIn(true);
     }
   }, []);
+
+  const refreshRoomData = async () => {
+    if (!selectedRoomId) return;
+    
+    try {
+      setLoading(true);
+      setError(null);
+      const response = await getMatchingRoom(selectedRoomId);
+      
+      if (!response) {
+        throw new Error('매칭룸 정보를 찾을 수 없습니다.');
+      }
+
+      const roomData = {
+        id: response.id,
+        name: response.name,
+        isManager: response.isManager,
+        enterMebmerList: response.enterMebmerList || [],
+        groupList: response.groupList || [],
+        entryCode: response.entryCode
+      };
+
+      setMatchingRoomData(roomData);
+    } catch (err) {
+      console.error('Failed to refresh room data:', err);
+      setError(err.response?.data?.message || err.message || '매칭룸 정보를 불러오는데 실패했습니다.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleSplashFinish = () => {
     setActiveScreen(isLoggedIn ? 'matching-room-list' : 'login');
@@ -54,29 +86,28 @@ function App() {
     try {
       setLoading(true);
       setError(null);
-      const response = await getMatchingRoom(tempRoomId);
-      console.log('Matching Room Data:', response); // 데이터 확인용 로그
+      const response = await joinMatchingRoom(tempRoomId);
       
       if (!response) {
         throw new Error('매칭룸 정보를 찾을 수 없습니다.');
       }
 
-      // API 응답 데이터 구조에 맞게 설정
       const roomData = {
         id: response.id,
         name: response.name,
         isManager: response.isManager,
         enterMebmerList: response.enterMebmerList || [],
-        groupList: response.groupList || []
+        groupList: response.groupList || [],
+        entryCode: response.entryCode
       };
 
       setMatchingRoomData(roomData);
-      setSelectedRoomId(tempRoomId);
+      setSelectedRoomId(response.id);
       setShowJoinConfirm(false);
       setActiveScreen('matching-room');
     } catch (err) {
-      console.error('Failed to fetch matching room:', err);
-      setError(err.response?.data?.message || err.message || '매칭룸 정보를 불러오는데 실패했습니다.');
+      console.error('Failed to join matching room:', err);
+      setError(err.response?.data?.message || err.message || '매칭룸 입장에 실패했습니다.');
       setShowJoinConfirm(false);
     } finally {
       setLoading(false);
@@ -89,19 +120,110 @@ function App() {
   };
 
   const handleExitRoom = () => {
-    setShowExitConfirm(true);
-  };
-
-  const handleConfirmExit = () => {
     setSelectedRoomId(null);
     setMatchingRoomData(null);
     setActiveScreen('matching-room-list');
-    setShowExitConfirm(false);
   };
 
-  const handleCancelExit = () => {
-    setShowExitConfirm(false);
+  const handleEntryCodeSubmit = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const response = await joinMatchingRoomByEntryCode(entryCode);
+      
+      if (!response) {
+        throw new Error('매칭룸 정보를 찾을 수 없습니다.');
+      }
+
+      const roomData = {
+        id: response.id,
+        name: response.name,
+        isManager: response.isManager,
+        enterMebmerList: response.enterMebmerList || [],
+        groupList: response.groupList || [],
+        entryCode: response.entryCode
+      };
+
+      setMatchingRoomData(roomData);
+      setSelectedRoomId(response.id);
+      setShowEntryCodeModal(false);
+      setEntryCode('');
+      setActiveScreen('matching-room');
+    } catch (err) {
+      console.error('Failed to join room with entry code:', err);
+      setError(err.response?.data?.message || err.message || '매칭룸 입장에 실패했습니다.');
+    } finally {
+      setLoading(false);
+    }
   };
+
+  const handleNavigateToMatchingRoom = useCallback(async (roomId) => {
+    try {
+      setLoading(true);
+      setError(null);
+      const response = await getMatchingRoom(roomId);
+      
+      if (!response) {
+        throw new Error('매칭룸 정보를 찾을 수 없습니다.');
+      }
+
+      const roomData = {
+        id: response.id,
+        name: response.name,
+        isManager: response.isManager,
+        enterMebmerList: response.enterMebmerList || [],
+        groupList: response.groupList || [],
+        entryCode: response.entryCode
+      };
+
+      setMatchingRoomData(roomData);
+      setSelectedRoomId(roomId);
+      setActiveScreen('matching-room');
+      // URL 업데이트
+      window.history.replaceState({}, '', `/matching-room/${roomId}`);
+    } catch (error) {
+      console.error('Failed to navigate to matching room:', error);
+      setError(error.response?.data?.message || error.message || '매칭방 입장에 실패했습니다.');
+      setActiveScreen('matching-room-list');
+      window.history.replaceState({}, '', '/');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  // 페이지 로드 시 URL 확인
+  useEffect(() => {
+    const path = window.location.pathname;
+    const matchingRoomMatch = path.match(/^\/matching-room\/(\d+)$/);
+    
+    if (matchingRoomMatch) {
+      const roomId = matchingRoomMatch[1];
+      handleNavigateToMatchingRoom(roomId);
+    } else if (path === '/') {
+      setActiveScreen('matching-room-list');
+    }
+  }, []);
+
+  // 브라우저 뒤로가기/앞으로가기 처리
+  useEffect(() => {
+    const handlePopState = () => {
+      const path = window.location.pathname;
+      if (path === '/') {
+        setActiveScreen('matching-room-list');
+        setMatchingRoomData(null);
+        setSelectedRoomId(null);
+      } else {
+        const matchingRoomMatch = path.match(/^\/matching-room\/(\d+)$/);
+        if (matchingRoomMatch) {
+          const roomId = matchingRoomMatch[1];
+          handleNavigateToMatchingRoom(roomId);
+        }
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [handleNavigateToMatchingRoom]);
 
   if (activeScreen === 'splash') {
     return <SplashScreen onFinish={handleSplashFinish} />;
@@ -121,9 +243,6 @@ function App() {
   }
 
   const renderScreen = () => {
-    console.log('Current screen:', activeScreen);
-    console.log('Matching room data:', matchingRoomData);
-
     switch (activeScreen) {
       case 'matching-room-list':
         return (
@@ -159,15 +278,12 @@ function App() {
           <MatchingRoomScreen
             onExitRoom={handleExitRoom}
             onStartMatching={() => {
-              console.log('Start matching');
               // TODO: 매칭 시작 API 호출
-            }}
-            onJoinMatching={() => {
-              console.log('Join matching');
-              // TODO: 매칭 참가 API 호출
             }}
             isManager={matchingRoomData.isManager}
             roomData={matchingRoomData}
+            onNavigateToMatchingRoom={() => setActiveScreen('matching-room-list')}
+            onRefreshRoomData={refreshRoomData}
           />
         );
       case 'profile':
@@ -213,15 +329,13 @@ function App() {
           </button>
           
           <button 
-            className={`flex flex-col items-center py-2 sm:py-3 px-4 sm:px-6 ${activeScreen === 'matching' ? 'text-blue-600' : 'text-gray-500'}`}
-            onClick={() => setActiveScreen('matching-room-list')}
+            className={`flex flex-col items-center py-2 sm:py-3 px-4 sm:px-6 text-gray-500 hover:text-blue-600`}
+            onClick={() => setShowEntryCodeModal(true)}
           >
             <div className="relative h-5 w-5 sm:h-6 sm:w-6 mb-1">
-              <svg className="w-full h-full" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
+              <QrCodeIcon className="w-full h-full" />
             </div>
-            <span className="text-xs font-medium">검색</span>
+            <span className="text-xs font-medium">입장코드</span>
           </button>
           
           <button 
@@ -239,20 +353,72 @@ function App() {
 
       {/* 모달들 */}
       <ConfirmModal
-        isOpen={showExitConfirm}
-        onClose={handleCancelExit}
-        onConfirm={handleConfirmExit}
-        title="매칭방 나가기"
-        message="매칭방을 나가시겠습니까?"
-      />
-
-      <ConfirmModal
         isOpen={showJoinConfirm}
         onClose={handleCancelJoin}
         onConfirm={handleConfirmJoin}
         title="매칭방 참여"
         message="매칭방에 참여하시겠습니까?"
       />
+
+      {/* 입장코드 모달 */}
+      {showEntryCodeModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-semibold">입장코드로 참여</h2>
+              <button
+                onClick={() => {
+                  setShowEntryCodeModal(false);
+                  setEntryCode('');
+                  setError(null);
+                }}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                <XMarkIcon className="w-6 h-6" />
+              </button>
+            </div>
+            <div className="mb-6">
+              <div className="mb-4">
+                <label htmlFor="entryCode" className="block text-sm font-medium text-gray-700 mb-2">
+                  매칭방 입장코드
+                </label>
+                <input
+                  type="text"
+                  id="entryCode"
+                  value={entryCode}
+                  onChange={(e) => setEntryCode(e.target.value)}
+                  placeholder="입장코드를 입력하세요"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              {error && (
+                <p className="text-sm text-red-600 mb-4">
+                  {error}
+                </p>
+              )}
+            </div>
+            <div className="flex justify-end space-x-3">
+              <button
+                onClick={() => {
+                  setShowEntryCodeModal(false);
+                  setEntryCode('');
+                  setError(null);
+                }}
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md"
+              >
+                취소
+              </button>
+              <button
+                onClick={handleEntryCodeSubmit}
+                disabled={!entryCode.trim() || loading}
+                className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {loading ? '입장 중...' : '입장하기'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

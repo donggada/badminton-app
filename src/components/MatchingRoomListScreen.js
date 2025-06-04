@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { PlusIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline';
+import { PlusIcon, MagnifyingGlassIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import { getMatchingRoomList, createMatchingRoom } from '../services/Axios';
 
 const MatchingRoomListScreen = ({ onRoomClick, onProfileClick, onLogout }) => {
@@ -11,16 +11,12 @@ const MatchingRoomListScreen = ({ onRoomClick, onProfileClick, onLogout }) => {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [newRoomName, setNewRoomName] = useState('');
   const [isCreating, setIsCreating] = useState(false);
-
-  useEffect(() => {
-    fetchRooms();
-  }, []);
+  const [errorModal, setErrorModal] = useState({ show: false, message: '' });
 
   const fetchRooms = async () => {
     try {
       setLoading(true);
       const response = await getMatchingRoomList();
-      console.log('Fetched rooms:', response);
       setRooms(response);
       setError(null);
     } catch (err) {
@@ -32,6 +28,10 @@ const MatchingRoomListScreen = ({ onRoomClick, onProfileClick, onLogout }) => {
     }
   };
 
+  React.useLayoutEffect(() => {
+    fetchRooms();
+  }, []);
+
   const handleRefresh = () => {
     setRefreshing(true);
     fetchRooms();
@@ -39,7 +39,10 @@ const MatchingRoomListScreen = ({ onRoomClick, onProfileClick, onLogout }) => {
 
   const handleCreateRoom = async () => {
     if (!newRoomName.trim()) {
-      alert('매칭방 이름을 입력해주세요.');
+      setErrorModal({
+        show: true,
+        message: '매칭방 이름을 입력해주세요.'
+      });
       return;
     }
 
@@ -55,7 +58,20 @@ const MatchingRoomListScreen = ({ onRoomClick, onProfileClick, onLogout }) => {
       }
     } catch (err) {
       console.error('Failed to create room:', err);
-      alert('매칭방 생성에 실패했습니다.');
+      let errorMessage = '매칭방 생성에 실패했습니다.';
+      
+      if (err.response) {
+        // 서버에서 반환한 에러 메시지가 있는 경우
+        errorMessage = err.response.data?.message || errorMessage;
+      } else if (err.request) {
+        // 요청은 보냈지만 응답을 받지 못한 경우
+        errorMessage = '서버와 통신할 수 없습니다. 인터넷 연결을 확인해주세요.';
+      }
+      
+      setErrorModal({
+        show: true,
+        message: errorMessage
+      });
     } finally {
       setIsCreating(false);
     }
@@ -214,6 +230,41 @@ const MatchingRoomListScreen = ({ onRoomClick, onProfileClick, onLogout }) => {
                 className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md disabled:opacity-50"
               >
                 {isCreating ? '생성 중...' : '생성하기'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 에러 모달 */}
+      {errorModal.show && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-semibold text-red-600">오류</h2>
+              <button
+                onClick={() => setErrorModal({ show: false, message: '' })}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                <XMarkIcon className="w-6 h-6" />
+              </button>
+            </div>
+            <div className="mb-6">
+              <div className="flex items-center justify-center mb-4">
+                <div className="bg-red-100 p-3 rounded-full">
+                  <svg className="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+              </div>
+              <p className="text-center text-gray-700">{errorModal.message}</p>
+            </div>
+            <div className="flex justify-end">
+              <button
+                onClick={() => setErrorModal({ show: false, message: '' })}
+                className="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-md"
+              >
+                확인
               </button>
             </div>
           </div>

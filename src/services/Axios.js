@@ -81,6 +81,7 @@ export const getMatchingRoomList = () =>
 export const getMatchingRoom = async (roomId) => {
   try {
     const response = await api.get(`/matching-room/${roomId}`);
+    console.log('매칭방 정보 응답:', response.data);
     return response.data;
   } catch (error) {
     console.error('매칭방 정보 가져오기 실패:', error);
@@ -148,6 +149,35 @@ export const updateMemberProfile = async (profileData) => {
     throw error;
   }
 };
+
+export const joinMatchingRoomByEntryCode = async (entryCode) => {
+  try {
+    const response = await api.post(`/matching-room/entry/${entryCode}`);
+    return response.data;
+  } catch (error) {
+    console.error('Failed to join matching room with entry code:', error);
+    throw error;
+  }
+};
+
+export const joinMatchingRoom = async (roomId) => {
+  try {
+    const response = await api.post(`/matching-room/${roomId}`);
+    return response.data;
+  } catch (error) {
+    console.error('Failed to join matching room:', error);
+    throw error;
+  }
+};
+
+export const updateMatchingStatus = (roomId, data) => 
+  api.patch(`/matching-room/${roomId}/status`, data);
+
+export const grantManagerRole = (roomId, memberId) => 
+  api.patch(`/manager/rooms/${roomId}/managers/${memberId}`);
+
+export const revokeManagerRole = (roomId, memberId) => 
+  api.delete(`/manager/rooms/${roomId}/managers/${memberId}`);
 
 export default api;
 
