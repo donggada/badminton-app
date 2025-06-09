@@ -179,5 +179,20 @@ export const grantManagerRole = (roomId, memberId) =>
 export const revokeManagerRole = (roomId, memberId) => 
   api.delete(`/manager/rooms/${roomId}/managers/${memberId}`);
 
+export const startMatching = (roomId, type) =>
+  api.post(`/manager/${roomId}/start`, { type });
+
+export const startCustomMatching = (roomId, memberIds) =>
+  api.post(`/manager/${roomId}/start/custom`, { memberIds });
+
+export const replaceGroupMember = (roomId, groupId, replacementMemberId, targetMemberId) =>
+  api.patch(`/manager/${roomId}/groups/${groupId}/members`, {
+    replacementMemberId,
+    targetMemberId
+  });
+
+export const updateAllGroupsStatus = (roomId, status, groupId) =>
+  api.patch(`/manager/${roomId}/groups/status`, { status, groupId });
+
 export default api;
 
