@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const baseURL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:8080/api/v1';
+const baseURL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:8080';
 
 // ===== Axios 인스턴스 설정 =====
 const axiosInstance = axios.create({
@@ -60,13 +60,13 @@ axiosInstance.interceptors.response.use(
 // ===== 인증 관련 API =====
 export const login = (loginId, password) => {
   console.info('🔑 Login attempt:', { loginId });
-  return axiosInstance.post('/auth/login', { loginId, password });
+  return axiosInstance.post('/api/v1/auth/login', { loginId, password });
 };
 
 // ===== 회원 관련 API =====
 export const register = async (userData) => {
   try {
-    const response = await axiosInstance.post('/member', userData);
+    const response = await axiosInstance.post('/api/v1/member', userData);
     return response.data;
   } catch (error) {
     throw error;
@@ -75,7 +75,7 @@ export const register = async (userData) => {
 
 export const getMemberProfile = async () => {
   try {
-    const response = await axiosInstance.get('/member');
+    const response = await axiosInstance.get('/api/v1/member');
     return response.data;
   } catch (error) {
     throw error;
@@ -85,7 +85,7 @@ export const getMemberProfile = async () => {
 export const updateMemberProfile = async (profileData) => {
   try {
     console.log('Updating member profile with data:', profileData);
-    const response = await axiosInstance.put('/member', profileData);
+    const response = await axiosInstance.put('/api/v1/member', profileData);
     console.log('Profile update response:', response.data);
     return response.data;
   } catch (error) {
@@ -100,7 +100,7 @@ export const updateMemberProfile = async (profileData) => {
 
 export const deleteMember = async (password) => {
   try {
-    const response = await axiosInstance.delete('/member', {
+    const response = await axiosInstance.delete('/api/v1member', {
       data: { password }
     });
     return response.data;
@@ -110,15 +110,15 @@ export const deleteMember = async (password) => {
 };
 
 // ===== 매칭룸 관련 API =====
-export const getMatchingRoomList = () => axiosInstance.get('/matching/room/list');
+export const getMatchingRoomList = () => axiosInstance.get('/api/v1/matching/room/list');
 
-export const getMatchingRoom = (roomId) => axiosInstance.get(`/matching/room/${roomId}`);
+export const getMatchingRoom = (roomId) => axiosInstance.get(`/api/v1/matching/room/${roomId}`);
 
-export const createMatchingRoom = (data) => axiosInstance.post('/matching/room', data);
+export const createMatchingRoom = (data) => axiosInstance.post('/api/v1/matching/room', data);
 
 export const joinMatchingRoom = async (roomId) => {
   try {
-    const response = await axiosInstance.post(`/matching-room/${roomId}`);
+    const response = await axiosInstance.post(`/api/v1/matching-room/${roomId}`);
     return response.data;
   } catch (error) {
     console.error('Failed to join matching room:', error);
@@ -128,7 +128,7 @@ export const joinMatchingRoom = async (roomId) => {
 
 export const joinMatchingRoomByEntryCode = async (entryCode) => {
   try {
-    const response = await axiosInstance.post(`/matching-room/entry/${entryCode}`);
+    const response = await axiosInstance.post(`/api/v1/matching-room/entry/${entryCode}`);
     return response.data;
   } catch (error) {
     console.error('Failed to join matching room with entry code:', error);
@@ -136,23 +136,23 @@ export const joinMatchingRoomByEntryCode = async (entryCode) => {
   }
 };
 
-export const updateMatchingStatus = (roomId, data) => axiosInstance.put(`/matching/room/${roomId}/status`, data);
+export const updateMatchingStatus = (roomId, data) => axiosInstance.put(`/api/v1/matching-room/${roomId}/status`, data);
 
 // ===== 매니저 관련 API =====
-export const grantManagerRole = (roomId, memberId) => axiosInstance.post(`/matching/room/${roomId}/manager/${memberId}`);
+export const grantManagerRole = (roomId, memberId) => axiosInstance.post(`/api/v1/manager/${roomId}/manager/${memberId}`);
 
-export const revokeManagerRole = (roomId, memberId) => axiosInstance.delete(`/matching/room/${roomId}/manager/${memberId}`);
+export const revokeManagerRole = (roomId, memberId) => axiosInstance.delete(`/api/v1/matching/room/${roomId}/manager/${memberId}`);
 
 // ===== 매칭 관련 API =====
-export const startMatching = (roomId, type) => axiosInstance.post(`/matching/room/${roomId}/start`, { type });
+export const startMatching = (roomId, type) => axiosInstance.post(`/api/v1/matching/room/${roomId}/start`, { type });
 
-export const startCustomMatching = (roomId, players) => axiosInstance.post(`/matching/room/${roomId}/custom`, { players });
+export const startCustomMatching = (roomId, players) => axiosInstance.post(`/api/v1/matching/room/${roomId}/custom`, { players });
 
 export const replaceGroupMember = (roomId, groupId, targetMemberId, replacementMemberId) => 
-  axiosInstance.put(`/matching/room/${roomId}/group/${groupId}/member`, { targetMemberId, replacementMemberId });
+  axiosInstance.put(`/api/v1/matching/room/${roomId}/group/${groupId}/member`, { targetMemberId, replacementMemberId });
 
 export const updateAllGroupsStatus = (roomId, status, groupId) => 
-  axiosInstance.put(`/matching/room/${roomId}/groups/status`, { status, groupId });
+  axiosInstance.put(`/api/v1matching/room/${roomId}/groups/status`, { status, groupId });
 
 export default axiosInstance;
 
