@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { XMarkIcon, UserCircleIcon, ClockIcon, UserGroupIcon, QrCodeIcon, NoSymbolIcon, ShareIcon, ClipboardIcon, ClipboardDocumentCheckIcon, EllipsisVerticalIcon, UserPlusIcon, UserMinusIcon, ShieldCheckIcon, ArrowsRightLeftIcon, ScaleIcon, UserGroupIcon as UserGroupSolidIcon, ArrowPathIcon, PlayIcon, CheckCircleIcon } from '@heroicons/react/24/outline';
 import { updateMatchingStatus, grantManagerRole, revokeManagerRole, startMatching, startCustomMatching, replaceGroupMember, updateAllGroupsStatus } from '../services/Axios';
 
@@ -30,6 +30,41 @@ function MatchingRoomScreen({ onExitRoom, onStartMatching, isManager, roomData, 
   const [replaceError, setReplaceError] = useState(null);
   const [isUpdatingGroupsStatus, setIsUpdatingGroupsStatus] = useState(false);
   const [groupsStatusError, setGroupsStatusError] = useState(null);
+
+  // 매칭방 데이터 주기적 갱신
+  useEffect(() => {
+    let isComponentMounted = true;
+
+    const refreshRoomData = async () => {
+      if (!isComponentMounted || !onRefreshRoomData) return;
+      
+      try {
+        await onRefreshRoomData();
+      } catch (error) {
+        console.error('Failed to refresh room data:', error);
+      }
+    };
+
+    // 초기 데이터 로드
+    refreshRoomData();
+
+    // 30초마다 데이터 갱신
+    const intervalId = setInterval(refreshRoomData, 30000);
+
+    // 페이지 새로고침 시 현재 URL 유지
+    const handleBeforeUnload = (e) => {
+      e.preventDefault();
+      e.returnValue = '';
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
+    return () => {
+      isComponentMounted = false;
+      clearInterval(intervalId);
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, [onRefreshRoomData]);
 
   const handleShowRoomCode = useCallback(() => {
     setShowRoomCode(true);
@@ -106,7 +141,7 @@ function MatchingRoomScreen({ onExitRoom, onStartMatching, isManager, roomData, 
   const handleExitRoom = async () => {
     try {
       setLoading(true);
-      await updateMatchingStatus(roomData.id, 'LEFT_ROOM');
+      await updateMatchingStatus(roomData.id, { status: 'LEFT_ROOM' });
       onExitRoom();
       // URL 업데이트
       window.history.pushState({}, '', '/');
@@ -478,13 +513,13 @@ function MatchingRoomScreen({ onExitRoom, onStartMatching, isManager, roomData, 
                       코트 {group.courtNumber || '미정'}
                     </span>
                     <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
-                      group.status === 'PLAYING' 
+                      group.status === 'IN_GAME' 
                         ? 'bg-yellow-100 text-yellow-800'
                         : group.status === 'COMPLETED'
                         ? 'bg-green-100 text-green-800'
                         : 'bg-gray-100 text-gray-800'
                     }`}>
-                      {group.status === 'PLAYING' 
+                      {group.status === 'IN_GAME' 
                         ? '게임중'
                         : group.status === 'COMPLETED'
                         ? '게임완료'
@@ -495,8 +530,8 @@ function MatchingRoomScreen({ onExitRoom, onStartMatching, isManager, roomData, 
                 {isManager && (
                   <div className="flex space-x-2 mb-3">
                     <button
-                      onClick={() => handleUpdateGroupStatus(group.id, 'PLAYING')}
-                      disabled={isUpdatingGroupsStatus || group.status === 'PLAYING'}
+                      onClick={() => handleUpdateGroupStatus(group.id, 'IN_GAME')}
+                      disabled={isUpdatingGroupsStatus || group.status === 'IN_GAME'}
                       className="flex items-center px-2 py-1 text-xs font-medium text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-md transition-colors disabled:opacity-50"
                     >
                       <PlayIcon className="w-3 h-3 mr-1" />
@@ -608,16 +643,8 @@ function MatchingRoomScreen({ onExitRoom, onStartMatching, isManager, roomData, 
               {renderMatchedGroups()}
             </div>
 
-            {/* 매칭 버튼 */}
-            <div className="mt-6 mb-4 space-y-3">
-              {isManager && (
-                <button
-                  onClick={onStartMatching}
-                  className="w-full bg-gray-50 text-blue-600 py-3 px-4 rounded-lg hover:bg-gray-100 border border-gray-200 transition-colors font-medium shadow-sm hover:shadow-md"
-                >
-                  매칭 시작하기
-                </button>
-              )}
+            {/* 나가기 버튼 */}
+            <div className="mt-6 mb-4">
               <button
                 onClick={handleShowLeaveConfirm}
                 disabled={isUpdatingStatus}

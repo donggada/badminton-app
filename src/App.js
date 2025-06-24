@@ -31,7 +31,40 @@ function App() {
     }
   }, []);
 
-  const refreshRoomData = async () => {
+  // 매칭방 데이터 로드
+  const loadRoomData = useCallback(async (roomId) => {
+    if (!roomId) return;
+    
+    try {
+      setLoading(true);
+      setError(null);
+      const response = await getMatchingRoom(roomId);
+      
+      if (!response) {
+        throw new Error('매칭룸 정보를 찾을 수 없습니다.');
+      }
+
+      setMatchingRoomData({
+        id: response.id,
+        name: response.name,
+        isManager: response.isManager,
+        enterMebmerList: response.enterMebmerList || [],
+        groupList: response.groupList || [],
+        entryCode: response.entryCode
+      });
+      setSelectedRoomId(roomId);
+      setActiveScreen('matching-room');
+    } catch (error) {
+      console.error('Failed to load room:', error);
+      setError(error.response?.data?.message || error.message || '매칭방 입장에 실패했습니다.');
+      handleExitRoom();
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  // 매칭방 데이터 새로고침
+  const refreshRoomData = useCallback(async () => {
     if (!selectedRoomId) return;
     
     try {
@@ -43,23 +76,50 @@ function App() {
         throw new Error('매칭룸 정보를 찾을 수 없습니다.');
       }
 
-      const roomData = {
+      setMatchingRoomData({
         id: response.id,
         name: response.name,
         isManager: response.isManager,
         enterMebmerList: response.enterMebmerList || [],
         groupList: response.groupList || [],
         entryCode: response.entryCode
-      };
-
-      setMatchingRoomData(roomData);
+      });
     } catch (err) {
       console.error('Failed to refresh room data:', err);
       setError(err.response?.data?.message || err.message || '매칭룸 정보를 불러오는데 실패했습니다.');
+      handleExitRoom();
     } finally {
       setLoading(false);
     }
-  };
+  }, [selectedRoomId]);
+
+  // 초기 URL 처리
+  useEffect(() => {
+    const path = window.location.pathname;
+    const matchingRoomMatch = path.match(/^\/matching-room\/(\d+)$/);
+    
+    if (matchingRoomMatch) {
+      const roomId = matchingRoomMatch[1];
+      loadRoomData(roomId);
+    } else if (path === '/') {
+      setActiveScreen('matching-room-list');
+      setSelectedRoomId(null);
+      setMatchingRoomData(null);
+    }
+  }, []);
+
+  const handleNavigateToMatchingRoom = useCallback((roomId) => {
+    if (selectedRoomId === roomId) return;
+    window.history.pushState({}, '', `/matching-room/${roomId}`);
+    loadRoomData(roomId);
+  }, [loadRoomData, selectedRoomId]);
+
+  const handleExitRoom = useCallback(() => {
+    setSelectedRoomId(null);
+    setMatchingRoomData(null);
+    setActiveScreen('matching-room-list');
+    window.history.replaceState({}, '', '/');
+  }, []);
 
   const handleSplashFinish = () => {
     setActiveScreen(isLoggedIn ? 'matching-room-list' : 'login');
@@ -92,19 +152,8 @@ function App() {
         throw new Error('매칭룸 정보를 찾을 수 없습니다.');
       }
 
-      const roomData = {
-        id: response.id,
-        name: response.name,
-        isManager: response.isManager,
-        enterMebmerList: response.enterMebmerList || [],
-        groupList: response.groupList || [],
-        entryCode: response.entryCode
-      };
-
-      setMatchingRoomData(roomData);
-      setSelectedRoomId(response.id);
+      handleNavigateToMatchingRoom(response.id);
       setShowJoinConfirm(false);
-      setActiveScreen('matching-room');
     } catch (err) {
       console.error('Failed to join matching room:', err);
       setError(err.response?.data?.message || err.message || '매칭룸 입장에 실패했습니다.');
@@ -119,12 +168,6 @@ function App() {
     setTempRoomId(null);
   };
 
-  const handleExitRoom = () => {
-    setSelectedRoomId(null);
-    setMatchingRoomData(null);
-    setActiveScreen('matching-room-list');
-  };
-
   const handleEntryCodeSubmit = async () => {
     try {
       setLoading(true);
@@ -135,20 +178,9 @@ function App() {
         throw new Error('매칭룸 정보를 찾을 수 없습니다.');
       }
 
-      const roomData = {
-        id: response.id,
-        name: response.name,
-        isManager: response.isManager,
-        enterMebmerList: response.enterMebmerList || [],
-        groupList: response.groupList || [],
-        entryCode: response.entryCode
-      };
-
-      setMatchingRoomData(roomData);
-      setSelectedRoomId(response.id);
+      handleNavigateToMatchingRoom(response.id);
       setShowEntryCodeModal(false);
       setEntryCode('');
-      setActiveScreen('matching-room');
     } catch (err) {
       console.error('Failed to join room with entry code:', err);
       setError(err.response?.data?.message || err.message || '매칭룸 입장에 실패했습니다.');
@@ -156,74 +188,6 @@ function App() {
       setLoading(false);
     }
   };
-
-  const handleNavigateToMatchingRoom = useCallback(async (roomId) => {
-    try {
-      setLoading(true);
-      setError(null);
-      const response = await getMatchingRoom(roomId);
-      
-      if (!response) {
-        throw new Error('매칭룸 정보를 찾을 수 없습니다.');
-      }
-
-      const roomData = {
-        id: response.id,
-        name: response.name,
-        isManager: response.isManager,
-        enterMebmerList: response.enterMebmerList || [],
-        groupList: response.groupList || [],
-        entryCode: response.entryCode
-      };
-
-      setMatchingRoomData(roomData);
-      setSelectedRoomId(roomId);
-      setActiveScreen('matching-room');
-      // URL 업데이트
-      window.history.replaceState({}, '', `/matching-room/${roomId}`);
-    } catch (error) {
-      console.error('Failed to navigate to matching room:', error);
-      setError(error.response?.data?.message || error.message || '매칭방 입장에 실패했습니다.');
-      setActiveScreen('matching-room-list');
-      window.history.replaceState({}, '', '/');
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  // 페이지 로드 시 URL 확인
-  useEffect(() => {
-    const path = window.location.pathname;
-    const matchingRoomMatch = path.match(/^\/matching-room\/(\d+)$/);
-    
-    if (matchingRoomMatch) {
-      const roomId = matchingRoomMatch[1];
-      handleNavigateToMatchingRoom(roomId);
-    } else if (path === '/') {
-      setActiveScreen('matching-room-list');
-    }
-  }, []);
-
-  // 브라우저 뒤로가기/앞으로가기 처리
-  useEffect(() => {
-    const handlePopState = () => {
-      const path = window.location.pathname;
-      if (path === '/') {
-        setActiveScreen('matching-room-list');
-        setMatchingRoomData(null);
-        setSelectedRoomId(null);
-      } else {
-        const matchingRoomMatch = path.match(/^\/matching-room\/(\d+)$/);
-        if (matchingRoomMatch) {
-          const roomId = matchingRoomMatch[1];
-          handleNavigateToMatchingRoom(roomId);
-        }
-      }
-    };
-
-    window.addEventListener('popstate', handlePopState);
-    return () => window.removeEventListener('popstate', handlePopState);
-  }, [handleNavigateToMatchingRoom]);
 
   if (activeScreen === 'splash') {
     return <SplashScreen onFinish={handleSplashFinish} />;
@@ -242,62 +206,6 @@ function App() {
     />;
   }
 
-  const renderScreen = () => {
-    switch (activeScreen) {
-      case 'matching-room-list':
-        return (
-          <MatchingRoomListScreen
-            onRoomClick={handleRoomClick}
-            onProfileClick={() => setActiveScreen('profile')}
-            onLogout={handleLogout}
-          />
-        );
-      case 'matching-room':
-        if (loading) {
-          return (
-            <div className="flex items-center justify-center h-full">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-            </div>
-          );
-        }
-        if (error) {
-          return (
-            <div className="flex items-center justify-center h-full">
-              <p className="text-red-600">{error}</p>
-            </div>
-          );
-        }
-        if (!matchingRoomData) {
-          return (
-            <div className="flex items-center justify-center h-full">
-              <p className="text-gray-600">매칭룸 정보를 불러오는 중입니다...</p>
-            </div>
-          );
-        }
-        return (
-          <MatchingRoomScreen
-            onExitRoom={handleExitRoom}
-            onStartMatching={() => {
-              // TODO: 매칭 시작 API 호출
-            }}
-            isManager={matchingRoomData.isManager}
-            roomData={matchingRoomData}
-            onNavigateToMatchingRoom={() => setActiveScreen('matching-room-list')}
-            onRefreshRoomData={refreshRoomData}
-          />
-        );
-      case 'profile':
-        return (
-          <ProfileScreen 
-            onReturnClick={() => setActiveScreen('matching-room-list')}
-            onLogout={handleLogout}
-          />
-        );
-      default:
-        return null;
-    }
-  };
-
   return (
     <div className="flex flex-col min-h-screen bg-white text-gray-900">
       {/* 로고 영역 */}
@@ -311,7 +219,33 @@ function App() {
       
       {/* 메인 컨텐츠 영역 */}
       <div className="flex-1 w-full">
-        {renderScreen()}
+        {activeScreen === 'matching-room-list' && (
+          <MatchingRoomListScreen
+            onRoomClick={handleRoomClick}
+            onProfileClick={() => setActiveScreen('profile')}
+            onLogout={handleLogout}
+          />
+        )}
+        
+        {activeScreen === 'matching-room' && matchingRoomData && (
+          <MatchingRoomScreen
+            onExitRoom={handleExitRoom}
+            onStartMatching={() => {
+              // TODO: 매칭 시작 API 호출
+            }}
+            isManager={matchingRoomData.isManager}
+            roomData={matchingRoomData}
+            onNavigateToMatchingRoom={handleNavigateToMatchingRoom}
+            onRefreshRoomData={refreshRoomData}
+          />
+        )}
+        
+        {activeScreen === 'profile' && (
+          <ProfileScreen 
+            onReturnClick={() => setActiveScreen('matching-room-list')}
+            onLogout={handleLogout}
+          />
+        )}
       </div>
       
       {/* 하단 네비게이션 바 */}
